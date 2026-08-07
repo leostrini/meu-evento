@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Card - Eu Vou!</title>
+    <title>Gerador de Card - 11ª Corrida da OAB</title>
     <style>
         :root {
             --bg-color: #0d1117;
             --card-bg: #161b22;
-            --accent-color: #ccff00; /* Amarelo Neon Esportivo */
+            --accent-color: #b5ff00; /* Verde limão/neon da OAB */
             --text-color: #ffffff;
         }
 
@@ -30,17 +30,18 @@
             padding: 30px;
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            max-width: 500px;
+            max-width: 450px;
             width: 100%;
             text-align: center;
             border: 1px solid #30363d;
         }
 
         h1 {
-            font-size: 24px;
+            font-size: 20px;
             margin-bottom: 5px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            color: var(--accent-color);
         }
 
         p.subtitle {
@@ -49,7 +50,6 @@
             font-size: 14px;
         }
 
-        /* Área do Canvas invisível para renderização em alta, e preview visível */
         #previewCanvas {
             max-width: 100%;
             height: auto;
@@ -74,7 +74,7 @@
         }
 
         label {
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
             color: #8b949e;
             font-weight: bold;
@@ -102,7 +102,7 @@
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(204, 255, 0, 0.4);
+            box-shadow: 0 4px 15px rgba(181, 255, 0, 0.4);
         }
 
         .btn-upload {
@@ -127,32 +127,29 @@
 
     <div class="container">
         <h1>Gerador "Eu Vou!"</h1>
-        <p class="subtitle">Monte seu card personalizado para a corrida</p>
+        <p class="subtitle">11ª Corrida da OAB - Canaã dos Carajás</p>
 
-        <!-- Canvas onde a mágica acontece -->
-        <canvas id="previewCanvas" width="1080" height="1080"></canvas>
+        <!-- Canvas configurado na proporção exata da sua imagem (1080x1920) -->
+        <canvas id="previewCanvas" width="1080" height="1920"></canvas>
 
-        <!-- Botão customizado de upload -->
         <label for="fotoUpload" class="btn btn-upload">1. Selecionar Minha Foto</label>
         <input type="file" id="fotoUpload" accept="image/*">
 
-        <!-- Controles de ajuste da imagem -->
         <div class="controls">
             <div class="control-group">
                 <label for="zoom">Zoom da Foto</label>
-                <input type="range" id="zoom" min="0.1" max="3" step="0.01" value="1">
+                <input type="range" id="zoom" min="0.1" max="4" step="0.01" value="1">
             </div>
             <div class="control-group">
-                <label for="posX">Posição Horizontal (X)</label>
-                <input type="range" id="posX" min="-500" max="500" step="1" value="0">
+                <label for="posX">Mover Horizontalmente (X)</label>
+                <input type="range" id="posX" min="-1000" max="1000" step="1" value="0">
             </div>
             <div class="control-group">
-                <label for="posY">Posição Vertical (Y)</label>
-                <input type="range" id="posY" min="-500" max="500" step="1" value="0">
+                <label for="posY">Mover Verticalmente (Y)</label>
+                <input type="range" id="posY" min="-1000" max="1000" step="1" value="0">
             </div>
         </div>
 
-        <!-- Botão de Download -->
         <button id="btnDownload" class="btn">2. Baixar Meu Card</button>
     </div>
 
@@ -166,73 +163,40 @@
         const btnDownload = document.getElementById('btnDownload');
 
         let userImage = null;
+        let maskImage = new Image();
+        
+        // Caminho exato com a nomenclatura atual do seu arquivo
+        maskImage.src = 'MASCARA CORRIDA OAB 2026 EU VOU.png'; 
+        
+        maskImage.onload = function() {
+            drawCard();
+        };
 
-        // Configurações iniciais do canvas (Template Base)
         function drawCard() {
-            // Limpa o canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Fundo Preto caso não tenha foto
-            ctx.fillStyle = '#0d1117';
+            // 1. Fundo cinza escuro para preencher rebarbas vazias da foto
+            ctx.fillStyle = '#1f242c';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 2. Desenha a foto do usuário se ela existir
+            // 2. Desenha a foto do usuário (Camada de trás)
             if (userImage) {
                 ctx.save();
-                
-                // Mover o contexto para o centro para aplicar escala e translação corretas
-                ctx.translate(canvas.width / 2 + parseFloat(posXInput.value), canvas.height / 2 + parseFloat(posYInput.value));
+                // Centraliza a foto no meio da janela transparente da moldura
+                ctx.translate(canvas.width / 2 + parseFloat(posXInput.value), 930 + parseFloat(posYInput.value));
                 ctx.scale(zoomInput.value, zoomInput.value);
-                
-                // Desenha a imagem centralizada no ponto transladado
                 ctx.drawImage(userImage, -userImage.width / 2, -userImage.height / 2);
-                
                 ctx.restore();
             }
 
-            // 3. Camada de Gradiente Escuro na base para dar leitura ao texto
-            let gradient = ctx.createLinearGradient(0, canvas.height * 0.5, 0, canvas.height);
-            gradient.addColorStop(0, 'rgba(13, 17, 23, 0)');
-            gradient.addColorStop(0.7, 'rgba(13, 17, 23, 0.85)');
-            gradient.addColorStop(1, 'rgba(13, 17, 23, 1)');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, canvas.height * 0.5, canvas.width, canvas.height * 0.5);
-
-            // 4. Detalhes de Design Esportivo (Borda Neon)
-            ctx.strokeStyle = '#ccff00';
-            ctx.lineWidth = 20;
-            ctx.strokeRect(0, 0, canvas.width, canvas.height);
-
-            // Detalhe gráfico inclinado na lateral inferior
-            ctx.fillStyle = '#ccff00';
-            ctx.beginPath();
-            ctx.moveTo(0, canvas.height - 150);
-            ctx.lineTo(80, canvas.height - 150);
-            ctx.lineTo(130, canvas.height);
-            ctx.lineTo(0, canvas.height);
-            ctx.fill();
-
-            // 5. Textos Oficiais da Arte
-            // Texto "EU VOU!" destacado
-            ctx.fillStyle = '#ccff00';
-            ctx.font = 'black italic 90px "Segoe UI", Arial, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('EU VOU!', canvas.width / 2, canvas.height - 160);
-
-            // Nome do Evento / Categoria
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 45px "Segoe UI", Arial, sans-serif';
-            ctx.fillText('CORRIDA DE RUA 2026', canvas.width / 2, canvas.height - 90);
-
-            // Mensagem secundária ou data
-            ctx.fillStyle = '#8b949e';
-            ctx.font = '500 30px "Segoe UI", Arial, sans-serif';
-            ctx.fillText('PRESENÇA CONFIRMADA', canvas.width / 2, canvas.height - 45);
+            // 3. Desenha a moldura oficial por CIMA (Camada da frente)
+            if (maskImage.complete) {
+                ctx.drawImage(maskImage, 0, 0, canvas.width, canvas.height);
+            }
         }
 
-        // Listener para carregar a foto do usuário
         fotoUpload.addEventListener('change', function(e) {
-            const file = e.target.target || e.target.files[0];
+            const file = e.target.files;
             if (!file) return;
 
             const reader = new FileReader();
@@ -241,13 +205,12 @@
                 img.onload = function() {
                     userImage = img;
                     
-                    // Ajusta o slider de zoom inicial baseado no tamanho da imagem carregada
-                    const minScale = Math.max(canvas.width / img.width, canvas.height / img.height);
-                    zoomInput.min = minScale.toFixed(2);
+                    // Ajusta o zoom focado na área útil transparente
+                    const minScale = Math.max(850 / img.width, 1150 / img.height);
+                    zoomInput.min = (minScale * 0.3).toFixed(2);
                     zoomInput.max = (minScale * 4).toFixed(2);
                     zoomInput.value = minScale.toFixed(2);
                     
-                    // Reseta posições
                     posXInput.value = 0;
                     posYInput.value = 0;
 
@@ -258,25 +221,20 @@
             reader.readAsDataURL(file);
         });
 
-        // Ouvintes para redesenhar o canvas em tempo real ao mexer nos controles
         zoomInput.addEventListener('input', drawCard);
         posXInput.addEventListener('input', drawCard);
         posYInput.addEventListener('input', drawCard);
 
-        // Função de download da imagem final pronta
         btnDownload.addEventListener('click', function() {
             if (!userImage) {
                 alert('Por favor, selecione uma foto primeiro!');
                 return;
             }
             const link = document.createElement('a');
-            link.download = 'meu_card_corrida.png';
+            link.download = 'meu_card_11_corrida_oab.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
         });
-
-        // Inicializa o card vazio com o fundo padrão
-        drawCard();
     </script>
 </body>
 </html>
