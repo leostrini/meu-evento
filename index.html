@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Card - Eu Vou!</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --card-bg: #161b22;
+            --accent-color: #ccff00; /* Amarelo Neon Esportivo */
+            --text-color: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid #30363d;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        p.subtitle {
+            color: #8b949e;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        /* Área do Canvas invisível para renderização em alta, e preview visível */
+        #previewCanvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            background-color: #000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #8b949e;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent-color);
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(204, 255, 0, 0.4);
+        }
+
+        .btn-upload {
+            background-color: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+            margin-bottom: 20px;
+        }
+
+        .btn-upload:hover {
+            background-color: #30363d;
+            box-shadow: none;
+            color: #fff;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Gerador "Eu Vou!"</h1>
+        <p class="subtitle">Monte seu card personalizado para a corrida</p>
+
+        <!-- Canvas onde a mágica acontece -->
+        <canvas id="previewCanvas" width="1080" height="1080"></canvas>
+
+        <!-- Botão customizado de upload -->
+        <label for="fotoUpload" class="btn btn-upload">1. Selecionar Minha Foto</label>
+        <input type="file" id="fotoUpload" accept="image/*">
+
+        <!-- Controles de ajuste da imagem -->
+        <div class="controls">
+            <div class="control-group">
+                <label for="zoom">Zoom da Foto</label>
+                <input type="range" id="zoom" min="0.1" max="3" step="0.01" value="1">
+            </div>
+            <div class="control-group">
+                <label for="posX">Posição Horizontal (X)</label>
+                <input type="range" id="posX" min="-500" max="500" step="1" value="0">
+            </div>
+            <div class="control-group">
+                <label for="posY">Posição Vertical (Y)</label>
+                <input type="range" id="posY" min="-500" max="500" step="1" value="0">
+            </div>
+        </div>
+
+        <!-- Botão de Download -->
+        <button id="btnDownload" class="btn">2. Baixar Meu Card</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d');
+        const fotoUpload = document.getElementById('fotoUpload');
+        const zoomInput = document.getElementById('zoom');
+        const posXInput = document.getElementById('posX');
+        const posYInput = document.getElementById('posY');
+        const btnDownload = document.getElementById('btnDownload');
+
+        let userImage = null;
+
+        // Configurações iniciais do canvas (Template Base)
+        function drawCard() {
+            // Limpa o canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Fundo Preto caso não tenha foto
+            ctx.fillStyle = '#0d1117';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. Desenha a foto do usuário se ela existir
+            if (userImage) {
+                ctx.save();
+                
+                // Mover o contexto para o centro para aplicar escala e translação corretas
+                ctx.translate(canvas.width / 2 + parseFloat(posXInput.value), canvas.height / 2 + parseFloat(posYInput.value));
+                ctx.scale(zoomInput.value, zoomInput.value);
+                
+                // Desenha a imagem centralizada no ponto transladado
+                ctx.drawImage(userImage, -userImage.width / 2, -userImage.height / 2);
+                
+                ctx.restore();
+            }
+
+            // 3. Camada de Gradiente Escuro na base para dar leitura ao texto
+            let gradient = ctx.createLinearGradient(0, canvas.height * 0.5, 0, canvas.height);
+            gradient.addColorStop(0, 'rgba(13, 17, 23, 0)');
+            gradient.addColorStop(0.7, 'rgba(13, 17, 23, 0.85)');
+            gradient.addColorStop(1, 'rgba(13, 17, 23, 1)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, canvas.height * 0.5, canvas.width, canvas.height * 0.5);
+
+            // 4. Detalhes de Design Esportivo (Borda Neon)
+            ctx.strokeStyle = '#ccff00';
+            ctx.lineWidth = 20;
+            ctx.strokeRect(0, 0, canvas.width, canvas.height);
+
+            // Detalhe gráfico inclinado na lateral inferior
+            ctx.fillStyle = '#ccff00';
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height - 150);
+            ctx.lineTo(80, canvas.height - 150);
+            ctx.lineTo(130, canvas.height);
+            ctx.lineTo(0, canvas.height);
+            ctx.fill();
+
+            // 5. Textos Oficiais da Arte
+            // Texto "EU VOU!" destacado
+            ctx.fillStyle = '#ccff00';
+            ctx.font = 'black italic 90px "Segoe UI", Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('EU VOU!', canvas.width / 2, canvas.height - 160);
+
+            // Nome do Evento / Categoria
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 45px "Segoe UI", Arial, sans-serif';
+            ctx.fillText('CORRIDA DE RUA 2026', canvas.width / 2, canvas.height - 90);
+
+            // Mensagem secundária ou data
+            ctx.fillStyle = '#8b949e';
+            ctx.font = '500 30px "Segoe UI", Arial, sans-serif';
+            ctx.fillText('PRESENÇA CONFIRMADA', canvas.width / 2, canvas.height - 45);
+        }
+
+        // Listener para carregar a foto do usuário
+        fotoUpload.addEventListener('change', function(e) {
+            const file = e.target.target || e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    userImage = img;
+                    
+                    // Ajusta o slider de zoom inicial baseado no tamanho da imagem carregada
+                    const minScale = Math.max(canvas.width / img.width, canvas.height / img.height);
+                    zoomInput.min = minScale.toFixed(2);
+                    zoomInput.max = (minScale * 4).toFixed(2);
+                    zoomInput.value = minScale.toFixed(2);
+                    
+                    // Reseta posições
+                    posXInput.value = 0;
+                    posYInput.value = 0;
+
+                    drawCard();
+                }
+                img.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        // Ouvintes para redesenhar o canvas em tempo real ao mexer nos controles
+        zoomInput.addEventListener('input', drawCard);
+        posXInput.addEventListener('input', drawCard);
+        posYInput.addEventListener('input', drawCard);
+
+        // Função de download da imagem final pronta
+        btnDownload.addEventListener('click', function() {
+            if (!userImage) {
+                alert('Por favor, selecione uma foto primeiro!');
+                return;
+            }
+            const link = document.createElement('a');
+            link.download = 'meu_card_corrida.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+        // Inicializa o card vazio com o fundo padrão
+        drawCard();
+    </script>
+</body>
+</html>
