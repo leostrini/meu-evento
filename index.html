@@ -8,7 +8,7 @@
         :root {
             --bg-color: #0d1117;
             --card-bg: #161b22;
-            --accent-color: #b5ff00; /* Verde limão da OAB */
+            --accent-color: #b5ff00;
             --text-color: #ffffff;
         }
 
@@ -164,18 +164,13 @@
         let userImage = null;
         let maskImage = new Image();
         
-        // Habilita a permissão de leitura de imagens externas para evitar travas
         maskImage.crossOrigin = "anonymous";
         
-        // CORREÇÃO CRÍTICA: Link direto gerado do arquivo original do seu repositório
-        maskImage.src = 'https://githubusercontent.com'; 
+        // Puxa o arquivo renomeado localmente
+        maskImage.src = 'mascara.png'; 
         
         maskImage.onload = function() {
             drawCard();
-        };
-        
-        maskImage.onerror = function() {
-            console.error("Erro ao carregar a máscara oficial do servidor.");
         };
 
         function drawCard() {
@@ -185,24 +180,24 @@
             ctx.fillStyle = '#1f242c';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 2. Desenha a foto do usuário (Fica na camada de trás)
+            // 2. Desenha a foto do usuário atrás
             if (userImage) {
                 ctx.save();
-                // Centralizado na abertura branca da moldura (ajustado para a proporção 1080x1920)
+                // Alinha a imagem perfeitamente na janela vazada
                 ctx.translate(canvas.width / 2 + parseFloat(posXInput.value), 930 + parseFloat(posYInput.value));
                 ctx.scale(zoomInput.value, zoomInput.value);
                 ctx.drawImage(userImage, -userImage.width / 2, -userImage.height / 2);
                 ctx.restore();
             }
 
-            // 3. Desenha a moldura oficial (Fica por cima)
-            if (maskImage.complete) {
+            // 3. Desenha a moldura por cima
+            if (maskImage.complete && maskImage.naturalWidth !== 0) {
                 ctx.drawImage(maskImage, 0, 0, canvas.width, canvas.height);
             }
         }
 
         fotoUpload.addEventListener('change', function(e) {
-            const file = e.target.files[0];
+            const file = e.target.files;
             if (!file) return;
 
             const reader = new FileReader();
@@ -211,10 +206,10 @@
                 img.onload = function() {
                     userImage = img;
                     
-                    // Enquadramento automático inteligente focado na janela branca
-                    const minScale = Math.max(850 / img.width, 1150 / img.height);
-                    zoomInput.min = (minScale * 0.3).toFixed(2);
-                    zoomInput.max = (minScale * 4).toFixed(2);
+                    // Configuração de zoom baseada na janela vazada da moldura
+                    const minScale = Math.max(1080 / img.width, 1920 / img.height);
+                    zoomInput.min = (minScale * 0.2).toFixed(2);
+                    zoomInput.max = (minScale * 3.5).toFixed(2);
                     zoomInput.value = minScale.toFixed(2);
                     
                     posXInput.value = 0;
@@ -236,15 +231,10 @@
                 alert('Por favor, selecione uma foto primeiro!');
                 return;
             }
-            try {
-                const link = document.createElement('a');
-                link.download = 'meu_card_11_corrida_oab.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            } catch(err) {
-                alert('Houve um erro de segurança do navegador ao baixar. Certifique-se de usar o link público do GitHub Pages.');
-                console.error(err);
-            }
+            const link = document.createElement('a');
+            link.download = 'meu_card_11_corrida_oab.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         });
     </script>
 </body>
