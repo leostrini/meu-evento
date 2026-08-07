@@ -165,8 +165,6 @@
         let maskImage = new Image();
         
         maskImage.crossOrigin = "anonymous";
-        
-        // Puxa o arquivo renomeado localmente
         maskImage.src = 'mascara.png'; 
         
         maskImage.onload = function() {
@@ -176,23 +174,49 @@
         function drawCard() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Fundo padrão
-            ctx.fillStyle = '#1f242c';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // 2. Desenha a foto do usuário atrás
-            if (userImage) {
-                ctx.save();
-                // Alinha a imagem perfeitamente na janela vazada
-                ctx.translate(canvas.width / 2 + parseFloat(posXInput.value), 930 + parseFloat(posYInput.value));
-                ctx.scale(zoomInput.value, zoomInput.value);
-                ctx.drawImage(userImage, -userImage.width / 2, -userImage.height / 2);
-                ctx.restore();
-            }
-
-            // 3. Desenha a moldura por cima
+            // 1. Desenha a moldura com o fundo branco primeiro
             if (maskImage.complete && maskImage.naturalWidth !== 0) {
                 ctx.drawImage(maskImage, 0, 0, canvas.width, canvas.height);
+            } else {
+                ctx.fillStyle = '#1f242c';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // 2. Desenha a foto por cima, mascarada cirurgicamente na área branca
+            if (userImage) {
+                ctx.save();
+                
+                // Mapeamento exato da janela com cantos arredondados na imagem de 1080x1920
+                ctx.beginPath();
+                const xWindow = 135;
+                const yWindow = 445;
+                const wWindow = 810;
+                const hWindow = 1130;
+                const radius = 65; // Curvatura exata dos cantos da janela
+                
+                ctx.moveTo(xWindow + radius, yWindow);
+                ctx.lineTo(xWindow + wWindow - radius, yWindow);
+                ctx.quadraticCurveTo(xWindow + wWindow, yWindow, xWindow + wWindow, yWindow + radius);
+                ctx.lineTo(xWindow + wWindow, yWindow + hWindow - radius);
+                ctx.quadraticCurveTo(xWindow + wWindow, yWindow + hWindow, xWindow + wWindow - radius, yWindow + hWindow);
+                ctx.lineTo(xWindow + radius, yWindow + hWindow);
+                ctx.quadraticCurveTo(xWindow, yWindow + hWindow, xWindow, yWindow + hWindow - radius);
+                ctx.lineTo(xWindow, yWindow + radius);
+                ctx.quadraticCurveTo(xWindow, yWindow, xWindow + radius, yWindow);
+                ctx.closePath();
+                
+                // Recorta para que nada vaze para fora do espaço correto
+                ctx.clip();
+
+                // Desenha a foto posicionada perfeitamente no centro da janela útil
+                const centerX = xWindow + (wWindow / 2);
+                const centerY = yWindow + (hWindow / 2);
+                
+                ctx.translate(centerX + parseFloat(posXInput.value), centerY + parseFloat(posYInput.value));
+                ctx.scale(zoomInput.value, zoomInput.value);
+                ctx.drawImage(userImage, -userImage.width / 2, -userImage.height / 2);
+                
+                ctx.restore();
             }
         }
 
@@ -206,10 +230,10 @@
                 img.onload = function() {
                     userImage = img;
                     
-                    // Configuração de zoom baseada na janela vazada da moldura
-                    const minScale = Math.max(1080 / img.width, 1920 / img.height);
-                    zoomInput.min = (minScale * 0.2).toFixed(2);
-                    zoomInput.max = (minScale * 3.5).toFixed(2);
+                    // Limita o zoom mínimo para cobrir a janela interna perfeitamente
+                    const minScale = Math.max(810 / img.width, 1130 / img.height);
+                    zoomInput.min = (minScale * 0.5).toFixed(2);
+                    zoomInput.max = (minScale * 4).toFixed(2);
                     zoomInput.value = minScale.toFixed(2);
                     
                     posXInput.value = 0;
