@@ -8,7 +8,7 @@
         :root {
             --bg-color: #0d1117;
             --card-bg: #161b22;
-            --accent-color: #b5ff00; /* Verde limão/neon da OAB */
+            --accent-color: #b5ff00; /* Verde limão da OAB */
             --text-color: #ffffff;
         }
 
@@ -129,7 +129,6 @@
         <h1>Gerador "Eu Vou!"</h1>
         <p class="subtitle">11ª Corrida da OAB - Canaã dos Carajás</p>
 
-        <!-- Canvas configurado na proporção exata da sua imagem (1080x1920) -->
         <canvas id="previewCanvas" width="1080" height="1920"></canvas>
 
         <label for="fotoUpload" class="btn btn-upload">1. Selecionar Minha Foto</label>
@@ -165,38 +164,45 @@
         let userImage = null;
         let maskImage = new Image();
         
-        // Caminho exato com a nomenclatura atual do seu arquivo
-        maskImage.src = 'MASCARA CORRIDA OAB 2026 EU VOU.png'; 
+        // Habilita a permissão de leitura de imagens externas para evitar travas
+        maskImage.crossOrigin = "anonymous";
+        
+        // CORREÇÃO CRÍTICA: Link direto gerado do arquivo original do seu repositório
+        maskImage.src = 'https://githubusercontent.com'; 
         
         maskImage.onload = function() {
             drawCard();
+        };
+        
+        maskImage.onerror = function() {
+            console.error("Erro ao carregar a máscara oficial do servidor.");
         };
 
         function drawCard() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Fundo cinza escuro para preencher rebarbas vazias da foto
+            // 1. Fundo padrão
             ctx.fillStyle = '#1f242c';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 2. Desenha a foto do usuário (Camada de trás)
+            // 2. Desenha a foto do usuário (Fica na camada de trás)
             if (userImage) {
                 ctx.save();
-                // Centraliza a foto no meio da janela transparente da moldura
+                // Centralizado na abertura branca da moldura (ajustado para a proporção 1080x1920)
                 ctx.translate(canvas.width / 2 + parseFloat(posXInput.value), 930 + parseFloat(posYInput.value));
                 ctx.scale(zoomInput.value, zoomInput.value);
                 ctx.drawImage(userImage, -userImage.width / 2, -userImage.height / 2);
                 ctx.restore();
             }
 
-            // 3. Desenha a moldura oficial por CIMA (Camada da frente)
+            // 3. Desenha a moldura oficial (Fica por cima)
             if (maskImage.complete) {
                 ctx.drawImage(maskImage, 0, 0, canvas.width, canvas.height);
             }
         }
 
         fotoUpload.addEventListener('change', function(e) {
-            const file = e.target.files;
+            const file = e.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
@@ -205,7 +211,7 @@
                 img.onload = function() {
                     userImage = img;
                     
-                    // Ajusta o zoom focado na área útil transparente
+                    // Enquadramento automático inteligente focado na janela branca
                     const minScale = Math.max(850 / img.width, 1150 / img.height);
                     zoomInput.min = (minScale * 0.3).toFixed(2);
                     zoomInput.max = (minScale * 4).toFixed(2);
@@ -230,10 +236,15 @@
                 alert('Por favor, selecione uma foto primeiro!');
                 return;
             }
-            const link = document.createElement('a');
-            link.download = 'meu_card_11_corrida_oab.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            try {
+                const link = document.createElement('a');
+                link.download = 'meu_card_11_corrida_oab.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch(err) {
+                alert('Houve um erro de segurança do navegador ao baixar. Certifique-se de usar o link público do GitHub Pages.');
+                console.error(err);
+            }
         });
     </script>
 </body>
