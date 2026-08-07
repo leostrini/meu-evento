@@ -1,293 +1,388 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Card - 11ª Corrida da OAB</title>
-    <style>
-        :root {
-            --bg-color: #0d1117;
-            --card-bg: #161b22;
-            --accent-color: #b5ff00;
-            --text-color: #ffffff;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerador Eu Vou - 11ª Corrida da OAB</title>
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
+  <style>
+    :root {
+      --bg-color: #070907;
+      --card-bg: #111511;
+      --accent-color: #b6ff00;
+      --text-color: #ffffff;
+      --muted: #9ca3af;
+    }
 
-        .container {
-            background-color: var(--card-bg);
-            padding: 20px;
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-            max-width: 420px;
-            width: 100%;
-            text-align: center;
-            border: 1px solid #30363d;
-            box-sizing: border-box;
-        }
+    * {
+      box-sizing: border-box;
+    }
 
-        h1 {
-            font-size: 18px;
-            margin: 0 0 5px 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--accent-color);
-        }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: radial-gradient(circle at top, #1f2a13 0%, #050605 55%, #000 100%);
+      color: var(--text-color);
+      margin: 0;
+      padding: 18px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
 
-        p.subtitle {
-            color: #8b949e;
-            margin: 0 0 20px 0;
-            font-size: 13px;
-        }
+    .container {
+      background: rgba(17, 21, 17, 0.96);
+      padding: 22px;
+      border-radius: 18px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+      max-width: 460px;
+      width: 100%;
+      text-align: center;
+      border: 1px solid rgba(182, 255, 0, 0.25);
+    }
 
-        /* CONTAINER VISUAL DA MOLDURA E FOTO */
-        .canvas-container {
-            position: relative;
-            width: 100%;
-            padding-top: 177.77%; /* Proporção exata 1080x1920 (9:16) */
-            background-color: #1f242c;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            margin-bottom: 20px;
-        }
+    h1 {
+      font-size: 20px;
+      margin: 0 0 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--accent-color);
+    }
 
-        /* CAMADA DA MOLDURA (FICA NA FRENTE POR PADRÃO VIA CSS DOM) */
-        .mask-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            pointer-events: none; /* Deixa os cliques passarem para os controles se necessário */
-            background-image: url('mascara.png');
-            background-size: 100% 100%;
-            background-repeat: no-repeat;
-        }
+    .subtitle {
+      color: var(--muted);
+      margin: 0 0 18px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
 
-        /* ÁREA DE RECORTE CSS PARA A FOTO DO USUÁRIO FICAR EXATAMENTE NO MIOLO BRANCO */
-        .user-photo-box {
-            position: absolute;
-            top: 23.1%;    /* Topo exato da janela branca */
-            left: 12.5%;   /* Lateral esquerda exata da janela branca */
-            width: 75%;    /* Largura proporcional do miolo */
-            height: 58.8%; /* Altura proporcional do miolo */
-            z-index: 5;    /* Fica fisicamente atrás da moldura */
-            overflow: hidden;
-            border-radius: 40px; /* Cantos arredondados do miolo */
-            background-color: #111;
-        }
+    #previewCanvas {
+      width: 100%;
+      height: auto;
+      border-radius: 14px;
+      background: #000;
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45);
+      margin-bottom: 18px;
+      touch-action: none;
+      cursor: grab;
+    }
 
-        .user-photo-box img {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: none;
-            max-width: none;
-        }
+    #previewCanvas:active {
+      cursor: grabbing;
+    }
 
-        /* ESCONDE O CANVAS REAL DE DOWNLOAD DO USUÁRIO */
-        #realCanvas {
-            display: none;
-        }
+    input[type="file"] {
+      display: none;
+    }
 
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-            text-align: left;
-        }
+    .btn {
+      display: block;
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: 0.2s ease;
+    }
 
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+    .btn-upload {
+      background: #20271c;
+      color: #fff;
+      border: 1px solid rgba(182, 255, 0, 0.35);
+      margin-bottom: 16px;
+    }
 
-        label {
-            font-size: 11px;
-            text-transform: uppercase;
-            color: #8b949e;
-            font-weight: bold;
-        }
+    .btn-download {
+      background: var(--accent-color);
+      color: #000;
+      margin-top: 18px;
+    }
 
-        input[type="range"] {
-            width: 100%;
-            accent-color: var(--accent-color);
-        }
+    .btn:hover {
+      transform: translateY(-1px);
+    }
 
-        .btn {
-            background-color: var(--accent-color);
-            color: #000;
-            border: none;
-            padding: 14px 28px;
-            font-size: 15px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            width: 100%;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+    .controls {
+      display: grid;
+      gap: 14px;
+      text-align: left;
+      margin-top: 8px;
+    }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(181, 255, 0, 0.4);
-        }
+    .control-group label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
 
-        .btn-upload {
-            background-color: #21262d;
-            color: #c9d1d9;
-            border: 1px solid #30363d;
-            margin-bottom: 15px;
-        }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent-color);
+    }
 
-        input[type="file"] {
-            display: none;
-        }
-    </style>
+    .hint {
+      color: #cbd5e1;
+      font-size: 12px;
+      line-height: 1.45;
+      margin: 14px 0 0;
+    }
+  </style>
 </head>
+
 <body>
+  <div class="container">
+    <h1>Gerador “Eu Vou!”</h1>
+    <p class="subtitle">11ª Corrida da OAB - Canaã dos Carajás</p>
 
-    <div class="container">
-        <h1>Gerador "Eu Vou!"</h1>
-        <p class="subtitle">11ª Corrida da OAB - Canaã dos Carajás</p>
+    <canvas id="previewCanvas" width="1080" height="1920"></canvas>
 
-        <!-- Preview ao vivo estruturado em CSS puro -->
-        <div class="canvas-container">
-            <div class="user-photo-box">
-                <img id="userPreviewImg" src="" alt="Sua Foto">
-            </div>
-            <div class="mask-overlay"></div>
-        </div>
+    <label for="fotoUpload" class="btn btn-upload">1. Selecionar minha foto</label>
+    <input type="file" id="fotoUpload" accept="image/*" />
 
-        <!-- Canvas oculto usado estritamente para compor o download final -->
-        <canvas id="realCanvas" width="1080" height="1920"></canvas>
+    <div class="controls">
+      <div class="control-group">
+        <label for="zoom">
+          <span>Zoom da foto</span>
+          <span id="zoomValue">100%</span>
+        </label>
+        <input type="range" id="zoom" min="0.5" max="4" step="0.01" value="1" />
+      </div>
 
-        <label for="fotoUpload" class="btn btn-upload">1. Selecionar Minha Foto</label>
-        <input type="file" id="fotoUpload" accept="image/*">
+      <div class="control-group">
+        <label for="posX">Mover para os lados</label>
+        <input type="range" id="posX" min="-600" max="600" step="1" value="0" />
+      </div>
 
-        <div class="controls">
-            <div class="control-group">
-                <label for="zoom">Zoom da Foto</label>
-                <input type="range" id="zoom" min="0.2" max="4" step="0.01" value="1">
-            </div>
-            <div class="control-group">
-                <label for="posX">Mover Horizontalmente (X)</label>
-                <input type="range" id="posX" min="-500" max="500" step="1" value="0">
-            </div>
-            <div class="control-group">
-                <label for="posY">Mover Verticalmente (Y)</label>
-                <input type="range" id="posY" min="-500" max="500" step="1" value="0">
-            </div>
-        </div>
-
-        <button id="btnDownload" class="btn">2. Baixar Meu Card</button>
+      <div class="control-group">
+        <label for="posY">Mover para cima/baixo</label>
+        <input type="range" id="posY" min="-800" max="800" step="1" value="0" />
+      </div>
     </div>
 
-    <script>
-        const fotoUpload = document.getElementById('fotoUpload');
-        const userPreviewImg = document.getElementById('userPreviewImg');
-        const zoomInput = document.getElementById('zoom');
-        const posXInput = document.getElementById('posX');
-        const posYInput = document.getElementById('posY');
-        const btnDownload = document.getElementById('btnDownload');
-        const canvas = document.getElementById('realCanvas');
-        const ctx = canvas.getContext('2d');
+    <p class="hint">
+      Dica: depois de escolher a foto, você também pode arrastar a imagem diretamente no preview.
+    </p>
 
-        let rawImgObject = null;
-        let maskImgObject = new Image();
-        maskImgObject.crossOrigin = "anonymous";
-        maskImgObject.src = 'mascara.png';
+    <button id="btnDownload" class="btn btn-download">2. Baixar meu card</button>
+  </div>
 
-        // Atualiza a visualização CSS em tempo real na tela
-        function updateLivePreview() {
-            if (!rawImgObject) return;
-            
-            const zoom = zoomInput.value;
-            const x = posXInput.value;
-            const y = posYInput.value;
-            
-            // Aplica transformações CSS diretamente na tag IMG interna
-            userPreviewImg.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${zoom})`;
-        }
+  <script>
+    const canvas = document.getElementById("previewCanvas");
+    const ctx = canvas.getContext("2d");
 
-        fotoUpload.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+    const fotoUpload = document.getElementById("fotoUpload");
+    const zoomInput = document.getElementById("zoom");
+    const posXInput = document.getElementById("posX");
+    const posYInput = document.getElementById("posY");
+    const zoomValue = document.getElementById("zoomValue");
+    const btnDownload = document.getElementById("btnDownload");
 
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                userPreviewImg.src = event.target.result;
-                userPreviewImg.style.display = 'block';
-                
-                const img = new Image();
-                img.onload = function() {
-                    rawImgObject = img;
-                    
-                    // Reseta valores dos controles deslizantes
-                    zoomInput.value = 1;
-                    posXInput.value = 0;
-                    posYInput.value = 0;
-                    
-                    updateLivePreview();
-                }
-                img.src = event.target.result;
-            }
-            reader.readAsDataURL(file);
-        });
+    const CANVAS_W = 1080;
+    const CANVAS_H = 1920;
 
-        zoomInput.addEventListener('input', updateLivePreview);
-        posXInput.addEventListener('input', updateLivePreview);
-        posYInput.addEventListener('input', updateLivePreview);
+    /*
+      Área transparente da máscara.
+      Medidas já ajustadas para 1080x1920.
+      Caso sua máscara mude, esses números podem precisar de pequeno ajuste.
+    */
+    const PHOTO_AREA = {
+      x: 145,
+      y: 445,
+      w: 810,
+      h: 1158,
+      radius: 48
+    };
 
-        // Processa o download juntando as duas camadas no Canvas invisível apenas no clique
-        btnDownload.addEventListener('click', function() {
-            if (!rawImgObject) {
-                alert('Por favor, selecione uma foto primeiro!');
-                return;
-            }
+    let userImage = null;
+    let baseScale = 1;
+    let isDragging = false;
+    let lastPointer = { x: 0, y: 0 };
 
-            btnDownload.innerText = "Processando...";
-            btnDownload.disabled = true;
+    const maskImage = new Image();
 
-            // Limpa o canvas de renderização técnica
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    /*
+      Opção 1, recomendada:
+      deixe o arquivo mascara.png na mesma pasta do index.html
+    */
+    maskImage.src = "mascara.png";
 
-            // 1. Desenha a máscara oficial primeiro como plano de fundo completo
-            if (maskImgObject.complete && maskImgObject.naturalWidth !== 0) {
-                ctx.drawImage(maskImgObject, 0, 0, canvas.width, canvas.height);
-            } else {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
+    /*
+      Opção 2, se usar GitHub:
+      use um link RAW real, neste formato:
+      https://raw.githubusercontent.com/USUARIO/REPOSITORIO/main/mascara.png
+    */
 
-            // 2. Cria o recorte cirúrgico no canvas idêntico ao contêiner HTML para colar a foto por cima do miolo branco
-            ctx.save();
-            ctx.beginPath();
-            const xWin = 135;
-            const yWin = 445;
-            const wWin = 810;
-            const hWin = 1130;
-            const radius = 65;
-            
-            ctx.moveTo(xWin + radius, yWin);
-            ctx.lineTo(xWin + wWin - radius, yWin);
-            ctx.quadraticCurveTo(xWin + wWin, yWin, xWin + wWin, yWin + radius);
-            ctx.lineTo(xWin + wWin, yWin + hWindow = yWin + hWin - radius);
-            ctx.quadraticCurveTo(xWin + wWin, yWin + hWin, xWin + wWin - radius, yWin + hWin);
+    maskImage.onload = drawCard;
+
+    maskImage.onerror = function () {
+      alert("Erro ao carregar a máscara. Confira se o arquivo mascara.png está na mesma pasta do index.html.");
+    };
+
+    function roundedRectPath(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function drawCoverImage(img, area, scaleMultiplier, offsetX, offsetY) {
+      const scale = baseScale * scaleMultiplier;
+      const imgW = img.width * scale;
+      const imgH = img.height * scale;
+
+      const centerX = area.x + area.w / 2 + offsetX;
+      const centerY = area.y + area.h / 2 + offsetY;
+
+      const drawX = centerX - imgW / 2;
+      const drawY = centerY - imgH / 2;
+
+      ctx.drawImage(img, drawX, drawY, imgW, imgH);
+    }
+
+    function drawCard() {
+      ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+      ctx.fillStyle = "#050805";
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+      if (userImage) {
+        ctx.save();
+
+        roundedRectPath(
+          ctx,
+          PHOTO_AREA.x,
+          PHOTO_AREA.y,
+          PHOTO_AREA.w,
+          PHOTO_AREA.h,
+          PHOTO_AREA.radius
+        );
+
+        ctx.clip();
+
+        drawCoverImage(
+          userImage,
+          PHOTO_AREA,
+          parseFloat(zoomInput.value),
+          parseFloat(posXInput.value),
+          parseFloat(posYInput.value)
+        );
+
+        ctx.restore();
+      }
+
+      if (maskImage.complete && maskImage.naturalWidth > 0) {
+        ctx.drawImage(maskImage, 0, 0, CANVAS_W, CANVAS_H);
+      }
+
+      zoomValue.textContent = Math.round(parseFloat(zoomInput.value) * 100) + "%";
+    }
+
+    fotoUpload.addEventListener("change", function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = function (event) {
+        const img = new Image();
+
+        img.onload = function () {
+          userImage = img;
+
+          baseScale = Math.max(
+            PHOTO_AREA.w / img.width,
+            PHOTO_AREA.h / img.height
+          );
+
+          zoomInput.value = 1;
+          posXInput.value = 0;
+          posYInput.value = 0;
+
+          drawCard();
+        };
+
+        img.src = event.target.result;
+      };
+
+      reader.readAsDataURL(file);
+    });
+
+    zoomInput.addEventListener("input", drawCard);
+    posXInput.addEventListener("input", drawCard);
+    posYInput.addEventListener("input", drawCard);
+
+    function getPointerPosition(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+      return {
+        x: (clientX - rect.left) * (CANVAS_W / rect.width),
+        y: (clientY - rect.top) * (CANVAS_H / rect.height)
+      };
+    }
+
+    function startDrag(e) {
+      if (!userImage) return;
+      isDragging = true;
+      lastPointer = getPointerPosition(e);
+    }
+
+    function moveDrag(e) {
+      if (!isDragging || !userImage) return;
+      e.preventDefault();
+
+      const current = getPointerPosition(e);
+      const dx = current.x - lastPointer.x;
+      const dy = current.y - lastPointer.y;
+
+      posXInput.value = parseFloat(posXInput.value) + dx;
+      posYInput.value = parseFloat(posYInput.value) + dy;
+
+      lastPointer = current;
+      drawCard();
+    }
+
+    function endDrag() {
+      isDragging = false;
+    }
+
+    canvas.addEventListener("mousedown", startDrag);
+    canvas.addEventListener("mousemove", moveDrag);
+    window.addEventListener("mouseup", endDrag);
+
+    canvas.addEventListener("touchstart", startDrag, { passive: false });
+    canvas.addEventListener("touchmove", moveDrag, { passive: false });
+    window.addEventListener("touchend", endDrag);
+
+    btnDownload.addEventListener("click", function () {
+      if (!userImage) {
+        alert("Selecione uma foto primeiro.");
+        return;
+      }
+
+      const link = document.createElement("a");
+      link.download = "eu-vou-11-corrida-oab.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+
+    drawCard();
+  </script>
+</body>
+</html>
